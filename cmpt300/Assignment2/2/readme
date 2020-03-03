@@ -1,0 +1,6 @@
+To run the program
+first get the name of the two computers that you want to connect.
+Then open terminal, navigate to the folder containing the files.
+Make all related files
+Run program on both computers by: ./s-talk <your port> <other computer name> <other 's port'>
+start talking
