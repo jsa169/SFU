@@ -19,7 +19,7 @@ int parameter2;
 char message[101];
 
 void TotalInfo(){
-	printf("-------------------------------------------\n");
+	printf("\033[0m-------------------------------------------\033[0;32m\n");
 
 	PCB * current;
 
@@ -77,7 +77,7 @@ PCB * create(int priority, int status){
 
 	PCB * new_proc = new_PCB(proc_count+1, priority, status);
 	if(new_proc == NULL) {
-		printf("Process Creation failed.\n");
+		printf("WARNING!: Process Creation failed.\n");
 		return NULL;
 	}
 	proc_count++;
@@ -86,7 +86,7 @@ PCB * create(int priority, int status){
 	if(priority == 1) ListAppend(ReadyQ_Norm, new_proc);
 	if(priority == 0) ListAppend(ReadyQ_High, new_proc);
 
-	printf("-------------------------------------------\n"
+	printf("\033[0m-------------------------------------------\033[0;32m\n"
 		" The following proccess is created: \n");
 	printPCB(new_proc);
 	return new_proc;
@@ -95,21 +95,32 @@ PCB * create(int priority, int status){
 
 void Fork(){
 	if(current_proc->PID == 1){
-		printf("Cannot fork initial process.\n");
+		printf("WARNING!: Cannot fork initial process.\n");
 		return;
 	}
 	PCB * fork_proc = create(current_proc->priority,current_proc->status);
 	memcpy(fork_proc, current_proc, sizeof(PCB));
 	fork_proc->PID = proc_count;
 	fork_proc->status = 0;
+	fork_proc->needtoreply = 0;
 	printf("Successfully forked: \n");
 	printPCB(fork_proc);
 }
 
 void Quantum(){
-	int lastprocess = current_proc->PID;
+
+	int lastprocess;
 	int a;
+
+	if(current_proc == NULL) lastprocess = -1;
+	else lastprocess = current_proc->PID;
+
 	if(current_proc != NULL){
+		if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->waitformessage == 0
+		&& current_proc->needtoreply == 0 && current_proc->waitforreply == 0 && current_proc->PID != 1){
+			current_proc->priority = 1;
+		}
+
 		if (current_proc->PID == 1) {//if ini P -> Low
 			current_proc->status = 0;
 			ListAppend(ReadyQ_Low, current_proc);
@@ -153,8 +164,10 @@ void Quantum(){
 		}
 	}
 	current_proc->status = 1;
+	printf("\033[0;32m");
 	printf(" Current running process:\n");
 	printPCB(current_proc);
+	printf("\033[0m");
 
 }
 
@@ -225,8 +238,8 @@ void Send(int PID, char * msg){
 		printf(" Cannot send, receiver is currently blocked by a semaphore.\n");
 		return;
 	}
-	if(receive_proc->status == -1 && receive_proc->wait == 1){
-		printf(" Cannot send, reverive is waiting for a message.\n");
+	if(receive_proc->status == -1 && receive_proc->waitforreply == 1){
+		printf(" Cannot send, reverive is waiting for a reply.\n");
 		return;
 	}
 	if(current_proc->msg == 1){
@@ -239,9 +252,9 @@ void Send(int PID, char * msg){
 	receive_proc->sender = current_proc->PID;
 	receive_proc->needtoreply = 1;
 	receive_proc->status = 0;
-	receive_proc->wait = 0;
+	receive_proc->waitformessage = 0;
 	current_proc->status = -1;
-	current_proc->wait = 1;
+	current_proc->waitforreply = 1;
 	current_proc->priority = 0;
 
 	if(receive_proc->priority == 1){
@@ -250,19 +263,20 @@ void Send(int PID, char * msg){
 		receive_proc->priority = 0;
 	}
 	if(current_proc->status == -1) {
-		printf(" Message sent, proccess %i will be blocked while waiting for reply.\n", current_proc->PID);
+		printf(" Message sent, proccess %i will be blocked while waiting for reply, next process loaded.\n", current_proc->PID);
 		Quantum();
 	}
 }
 
 void Receive(){
-	if(current_proc->status == -1 && current_proc->wait == 1){
+	if(current_proc->status == -1 && current_proc->waitforreply == 1){
 		printf(" Cannot start receiving, the current process is waiting for reply.\n");
 		return;
 	}
 	if(current_proc->msg == 0){
 		current_proc->status = -1;
-		current_proc->wait = 1;
+		current_proc->waitformessage = 1;
+		current_proc->priority = 0;
 		printf(" No message to receive, process blocked until message arrives.\n");
 		Quantum();
 		return;
@@ -274,8 +288,8 @@ void Receive(){
 
 	current_proc->msg = 0;
 
-	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->wait == 0
-		&& current_proc->needtoreply == 0){
+	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->waitformessage == 0
+		&& current_proc->needtoreply == 0 && current_proc->waitforreply == 0 && current_proc->PID != 1){
 		current_proc->priority = 1;
 	}
 }
@@ -288,11 +302,16 @@ void Reply(int PID, char * msg){
 		return;
 	}
 	replyto->status = 0;
-	replyto->wait = 0;
+	replyto->waitforreply = 0;
 	replyto->msg = 1;
 	replyto->sender = current_proc->PID;
 	strcpy(replyto->message, msg);
 	current_proc->needtoreply = 0;
+
+	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->waitformessage == 0
+		&& current_proc->needtoreply == 0 && current_proc->waitforreply == 0 && current_proc->PID != 1){
+		current_proc->priority = 1;
+	}
 
 }
 
@@ -360,7 +379,7 @@ void SemaphoreV(int SID){
 
 
 void Proinfo(int PID){
-	printf("----------------------------------------------------------------------\n");
+	printf("\033[0m-------------------------------------------\033[0;32m\n");
 	
 	PCB * Pinfo = SearchAll(PID);
 	if (Pinfo == NULL){
@@ -370,23 +389,8 @@ void Proinfo(int PID){
 	printPCB(Pinfo);
 }
 
-
-
-
-
-int main(){
-	char command;
-	proc_count = 0;
-	SMP_count = 0;
-
-	ReadyQ_High = ListCreate();
-	ReadyQ_Norm = ListCreate();
-	ReadyQ_Low = ListCreate();
-
-	create(2,1); //create(low priority, ready)
-
-	ListFirst(ReadyQ_Low);
-	current_proc = ListRemove(ReadyQ_Low);
+void printmenu(){
+	printf("\033[0m");
 	printf(	"-------------------------------------------\n"
 		"		Main Menu\n"
 		"-------------------------------------------\n"
@@ -403,36 +407,51 @@ int main(){
 		"	[V] semaphore V\n"
 		"	[I] display info of a process\n"
 		"	[T] display all processes\n"
-		"	[Z] clear screen\n");
+		"	[Z] clear screen\n"
+		"	[M] show all semaphore\n");
+		printf("\033[0;32m");
+
+}
+
+int main(){
+	system("clear");
+	char command;
+	proc_count = 0;
+	SMP_count = 0;
+
+	ReadyQ_High = ListCreate();
+	ReadyQ_Norm = ListCreate();
+	ReadyQ_Low = ListCreate();
+
+	create(2,1); //create(low priority, ready)
+
+	ListFirst(ReadyQ_Low);
+	current_proc = ListRemove(ReadyQ_Low);
+	printmenu();
 	while(1){
-		printf("-------------------------------------------\n");
+
+		printf("\033[0m-------------------------------------------\n");
 		printf("Please select a function (Z to show Menu): ");	
 
 		command = getchar();
 		if(command != '\n'){
 			while(getchar() != '\n');			
 		}
+
+		printf("\033[0;32m");
+
 		switch(command){
 			case 'Z':
 				system("clear");
-						printf(	"		Main Menu\n"
-			"-------------------------------------------\n"
-			"	[C] create a new process\n"
-			"	[F] copy current process\n"
-			"	[K] kill a process\n"
-			"	[E] kill this corrent process\n"
-			"	[Q] execute the next ready process\n"
-			"	[S] send a message\n"
-			"	[R] receive a message\n"
-			"	[Y] reply to another process\n"
-			"	[N] create new semaphore\n"
-			"	[P] semaphore P\n"
-			"	[V] semaphore V\n"
-			"	[I] display info of a process\n"
-			"	[T] display all processes\n"
-			"	[Z] clear screen\n");
+				printmenu();
 				break;
-
+			case 'M':
+				for(int i= 0; i<6; i++){
+					if (Semaphore_List[i] != 0){
+						printf("Semaphore %i has value %i.\n", Semaphore_List[i]->SID, Semaphore_List[i]->val);
+					}
+				};
+				break;
 			case 'C':
 				create(1,0);//create(priority, status)
 				break;
@@ -482,38 +501,44 @@ int main(){
 			case 'N':
 				parameter = -1;
 				while(parameter < 1 || parameter > 5){
-					printf("Please enter the SID of semaphore to create (1-5): ");
+					printf("\033[0mPlease enter the SID of semaphore to create (1-5): ");
 					scanf("%d", &parameter);
-					getchar();					
+					getchar();
+					printf("\033[0;32m");					
 				}
 				if(Semaphore_List[parameter] != NULL){
 					printf("A semaphore with that SID already exist.\n");
 					break;
 				}
-				printf("Please enter the val of semaphore to create: ");
+				printf("\033[0mPlease enter the val of semaphore to create: ");
 				scanf("%d", &parameter2);
 				getchar();
+				printf("\033[0;32m");					
+
 				NewSemaphore(parameter, parameter2);
 				break;
 
 			case 'P':
-				printf("Please enter the s of semaphore to call P: ");
+				printf("\033[0mPlease enter the s of semaphore to call P: ");
 				scanf("%d", &parameter);
 				getchar();
+				printf("\033[0;32m");
 				SemaphoreP(parameter);			
 				break;
 
 			case 'V':
-				printf("Please enter the s of semaphore to call V: ");
+				printf("\033[0mPlease enter the s of semaphore to call V: ");
 				scanf("%d", &parameter);
 				getchar();
+				printf("\033[0;32m");
 				SemaphoreV(parameter);	
 				break;
 
 			case 'I':
-				printf("Please enter the PID to show info: ");
+				printf("\033[0mPlease enter the PID to show info: ");
 				scanf("%d", &parameter);
 				getchar();
+				printf("\033[0;32m");
 				Proinfo(parameter);
 				break;
 
@@ -524,12 +549,6 @@ int main(){
 			default:
 				break;
 		}
-	   //fflush(stdin);
-
 	}
-
-
-
-
 	return 0;
 }

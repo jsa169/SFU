@@ -18,7 +18,7 @@ PCB * new_PCB(int PID, int priority, int status){
 }
 
 void printPCB(PCB * a){
-	printf("  Proccess ID: %i   ", a->PID);
+	printf("  Proccess ID: %i\t", a->PID);
 	if(a->priority == 0) printf("-Priority: High   ");
 	if(a->priority == 1) printf("-Priority: Norm   ");
 	if(a->priority == 2) printf("-Priority: Low    ");
@@ -29,7 +29,9 @@ void printPCB(PCB * a){
 
 	if(a->msg == 1) printf("-Unread message.   ");
 
-	if(a->wait != 0) printf("-Waiting for msg or reply.   ");
+	if(a->waitformessage != 0) printf("-Waiting for message.   ");
+	if(a->waitforreply != 0) printf("-Waiting for reply.   ");
+
 	//if(a->wait == 0) printf("Not Waiting for message or reply.");
 
 	if(a->needtoreply != 0) printf("-Please reply to process %i.   ", a->sender);
