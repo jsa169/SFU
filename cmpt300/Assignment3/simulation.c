@@ -2,7 +2,7 @@
 
 Date: 2020-03-20
 
-Auther: Jichuan
+Auther: Jichuan Shi
 
 Description: Simulation for an operating system*/
 
