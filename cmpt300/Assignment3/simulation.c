@@ -475,11 +475,13 @@ int main(){
 				break;
 
 			case 'S':
-				printf("Please enter the PID to Send to: ");
+				printf("\033[0mlease enter the PID to Send to: ");
 				scanf("%d", &parameter);
 				getchar();
-				printf("Please enter the message to send: ");
+				printf("\033[0mPlease enter the message to send: ");
 				fgets(message, 100, stdin);
+				printf("\033[0;32m");					
+
 				Send(parameter, message);
 				memset(message, 0, 101);				
 				break;
@@ -489,11 +491,12 @@ int main(){
 				break;
 
 			case 'Y':
-				printf("Please enter the PID to reply to: ");
+				printf("\033[0mPlease enter the PID to reply to: ");
 				scanf("%d", &parameter);
 				getchar();			
-				printf("Please enter the message to reply: ");
+				printf("\033[0mPlease enter the message to reply: ");
 				fgets(message, 100, stdin);
+				printf("\033[0;32m");
 				Reply(parameter, message);
 				memset(message, 0, 101);				
 				break;
