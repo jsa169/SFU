@@ -1,16 +1,22 @@
-//simulation.c
+/*File: simulation.c
+
+Date: 2020-03-20
+
+Auther: Jichuan
+
+Description: Simulation for an operating system*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "function.h"
 
 
-
 LIST * ReadyQ_High;
 LIST * ReadyQ_Norm;
 LIST * ReadyQ_Low;
 SMP * Semaphore_List[6] = {NULL};
-//LIST * RecvQ;
 int proc_count;
 int SMP_count;
 PCB * current_proc;
@@ -18,7 +24,7 @@ int parameter;
 int parameter2;
 char message[101];
 
-void TotalInfo(){
+void TotalInfo(){ //display all processes
 	printf("\033[0m-------------------------------------------\033[0;32m\n");
 
 	PCB * current;
@@ -28,21 +34,21 @@ void TotalInfo(){
 	printf("\nCurrent process:\n");
 	printPCB(current_proc);
 	
-	printf("\nHigh priority processes (%i): \n", ListCount(ReadyQ_High));
+	printf("\nHigh priority processes (%i): \n", ListCount(ReadyQ_High)); //List out all process with high priority 
 	current = ListFirst(ReadyQ_High);
 	while(current != NULL){
 		printPCB(current);
 		current = ListNext(ReadyQ_High);	
 	}
 
-	printf("\nNormal priority processes (%i): \n", ListCount(ReadyQ_Norm));
+	printf("\nNormal priority processes (%i): \n", ListCount(ReadyQ_Norm));// List out all normal priority processes
 	current = ListFirst(ReadyQ_Norm);
 	while(current != NULL){
 		printPCB(current);
 		current = ListNext(ReadyQ_Norm);	
 	}	
 
-	printf("\nLow priority processes (%i): \n", ListCount(ReadyQ_Low));
+	printf("\nLow priority processes (%i): \n", ListCount(ReadyQ_Low)); //List out all process with low priority
 	current = ListFirst(ReadyQ_Low);
 	while(current != NULL){
 		printPCB(current);
@@ -53,27 +59,27 @@ void TotalInfo(){
 
 }
 
-PCB * SearchAll(int PID){
+PCB * SearchAll(int PID){//Search All lists
 	PCB * Pinfo;
 
 	if(PID == current_proc->PID) {
 		Pinfo = current_proc;
 	}else {
 		ListFirst(ReadyQ_High);
-		Pinfo = ListSearch(ReadyQ_High, comparator, &PID);
+		Pinfo = ListSearch(ReadyQ_High, comparator, &PID); //Search high priority Queue
 		if (Pinfo == NULL) {
 			ListFirst(ReadyQ_Norm);
-			Pinfo = ListSearch(ReadyQ_Norm, comparator, &PID);
+			Pinfo = ListSearch(ReadyQ_Norm, comparator, &PID); //Search norm priority Queue
 			if(Pinfo == NULL){
 				ListFirst(ReadyQ_Low);
-				Pinfo = ListSearch(ReadyQ_Low, comparator, &PID);
+				Pinfo = ListSearch(ReadyQ_Low, comparator, &PID); //Search low priority Queue
 			}
 		}
 	}
 	return Pinfo;
 }
 
-PCB * create(int priority, int status){
+PCB * create(int priority, int status){ //create a new process
 
 	PCB * new_proc = new_PCB(proc_count+1, priority, status);
 	if(new_proc == NULL) {
@@ -93,21 +99,23 @@ PCB * create(int priority, int status){
 
 }
 
-void Fork(){
+void Fork(){ //copy current process and put in Queue
 	if(current_proc->PID == 1){
 		printf("WARNING!: Cannot fork initial process.\n");
 		return;
 	}
-	PCB * fork_proc = create(current_proc->priority,current_proc->status);
+	PCB * fork_proc = create(current_proc->priority,current_proc->status);	//Create and clone
 	memcpy(fork_proc, current_proc, sizeof(PCB));
-	fork_proc->PID = proc_count;
-	fork_proc->status = 0;
-	fork_proc->needtoreply = 0;
+
+	fork_proc->PID = proc_count; //Cannot be copied, it must have a different PID
+	fork_proc->status = 0; //Cannot be copied, it must be ready
+	fork_proc->needtoreply = 0; //Cannot be copied, it shouldnt reply to the same sender
+
 	printf("Successfully forked: \n");
 	printPCB(fork_proc);
 }
 
-void Quantum(){
+void Quantum(){//execute the next ready process
 
 	int lastprocess;
 	int a;
@@ -115,26 +123,27 @@ void Quantum(){
 	if(current_proc == NULL) lastprocess = -1;
 	else lastprocess = current_proc->PID;
 
-	if(current_proc != NULL){
+	if(current_proc != NULL){ //Stop current running process and put into queue according to priority.
 		if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->waitformessage == 0
 		&& current_proc->needtoreply == 0 && current_proc->waitforreply == 0 && current_proc->PID != 1){
 			current_proc->priority = 1;
 		}
 
-		if (current_proc->PID == 1) {//if ini P -> Low
+		if (current_proc->PID == 1) {//if ini P -> Low, append(Low priority Queue)
 			current_proc->status = 0;
 			ListAppend(ReadyQ_Low, current_proc);
 		}else{
 
 			if (current_proc->status == -1 || current_proc->priority == 0) {
-				ListAppend(ReadyQ_High, current_proc);//if blocked -> High
-			}else{//if not blocked -> Norm
+				ListAppend(ReadyQ_High, current_proc); //if blocked -> High priority
+			}else{ //if not blocked -> Norm priority
 				ListAppend(ReadyQ_Norm, current_proc);
 			}
 		}
 		if(current_proc->status != -1) current_proc->status = 0;
 
 	}
+
 	a = ListCount(ReadyQ_High); //Get High priority process
 	while(a != 0){
 		ListFirst(ReadyQ_High);
@@ -147,7 +156,7 @@ void Quantum(){
 		a--;
 	}
 
-	if(a == 0){ //Get Normal priority process
+	if(a == 0){ //Get Normal priority process if all High priority ones are blocked
 		a = ListCount(ReadyQ_Norm);
 
 		while(a != 0){
@@ -171,7 +180,7 @@ void Quantum(){
 
 }
 
-void Kill(int PID){
+void Kill(int PID){ //kill this corrent process
 	PCB * to_be_killed = SearchAll(PID);
 
 	if(to_be_killed == NULL){
@@ -179,40 +188,51 @@ void Kill(int PID){
 		return;
 	}
 
-	if (to_be_killed == current_proc) {
-		if(to_be_killed->priority == 2){
+	if (to_be_killed == current_proc) { //If current process is the one to kill
+
+		if(to_be_killed->priority == 2){// if this is initial process
 			if(proc_count != 1) {
 				printf("Cannot Kill initial process, other process(es) still running. \n");
 				return;
-			}	
+			}
+
 			ListRemove(ReadyQ_Low);
+			printf("Initial process killed, exiting program.\n");
+			free(to_be_killed);
 			proc_count--;
 			exit(1);
 		}
-		free(current_proc);
+
+		free(current_proc); //kill current process
+		printf("Successfully killed current process.\n");
 		current_proc = NULL;
 		proc_count--;
 		Quantum();
 		return;
 	}
-	if(to_be_killed->priority == 0) ListRemove(ReadyQ_High);
-	else if(to_be_killed->priority == 1) ListRemove(ReadyQ_Norm);
-	else if(to_be_killed->priority == 2){
+
+	if(to_be_killed->priority == 0)ListRemove(ReadyQ_High); // Take out from apropriate ready queue
+	else if(to_be_killed->priority == 1) ListRemove(ReadyQ_Norm); // Take out from apropriate ready queue
+	else if(to_be_killed->priority == 2){ //If process to be killed is initial process
 		if(proc_count != 1) {
 			printf("Cannot Kill initial process, other process(es) still running. \n");
 			return;
 		}	
 		ListRemove(ReadyQ_Low);
+		free(to_be_killed);
+		printf("Initial process killed, exiting program.\n");
 		exit(1);
 	}
+	printf("Successfully killed proccess %i.\n", to_be_killed->PID);
+	free(to_be_killed);
 	proc_count--;
 }
 
-void Exit(){
+void Exit(){ // kill this corrent process
 	Kill(current_proc->PID);
 }
 
-void Send(int PID, char * msg){
+void Send(int PID, char * msg){ //send a message to another process
 	PCB * receive_proc = SearchAll(PID);
 	if(receive_proc == NULL){
 		printf(" Receiving PID does not exist.\n");
@@ -248,14 +268,14 @@ void Send(int PID, char * msg){
 	}
 
 	strcpy(receive_proc->message, msg);
-	receive_proc->msg = 1;
-	receive_proc->sender = current_proc->PID;
-	receive_proc->needtoreply = 1;
-	receive_proc->status = 0;
-	receive_proc->waitformessage = 0;
-	current_proc->status = -1;
-	current_proc->waitforreply = 1;
-	current_proc->priority = 0;
+	receive_proc->msg = 1; 						//receiver -> has unread message
+	receive_proc->sender = current_proc->PID; 	//Pass sender PID to receiver
+	receive_proc->needtoreply = 1; 				//receiver -> needs to reply
+	receive_proc->status = 0; 					//reveriver -> status ready
+	receive_proc->waitformessage = 0; 			//receiver -> not waiting for a message
+	current_proc->status = -1; 					//Sender -> status blocked
+	current_proc->waitforreply = 1; 			//Sender -> waiting for reply
+	current_proc->priority = 0;					//Sender -> Priority high
 
 	if(receive_proc->priority == 1){
 		ListRemove(ReadyQ_Norm);
@@ -268,7 +288,7 @@ void Send(int PID, char * msg){
 	}
 }
 
-void Receive(){
+void Receive(){ //receive a message
 	if(current_proc->status == -1 && current_proc->waitforreply == 1){
 		printf(" Cannot start receiving, the current process is waiting for reply.\n");
 		return;
@@ -284,17 +304,17 @@ void Receive(){
 	PCB * sender = SearchAll(current_proc->sender);
 	printf("\n Message from process %i: ", sender->PID);
 
-	puts(current_proc->message);
+	puts(current_proc->message); //print message
 
 	current_proc->msg = 0;
 
 	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->waitformessage == 0
 		&& current_proc->needtoreply == 0 && current_proc->waitforreply == 0 && current_proc->PID != 1){
-		current_proc->priority = 1;
+		current_proc->priority = 1; //Set priority to normal if everthing is completed
 	}
 }
 
-void Reply(int PID, char * msg){
+void Reply(int PID, char * msg){ //Reply to another process
 	PCB * replyto = SearchAll(PID);
 
 	if(PID != current_proc->sender){
@@ -310,12 +330,12 @@ void Reply(int PID, char * msg){
 
 	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->waitformessage == 0
 		&& current_proc->needtoreply == 0 && current_proc->waitforreply == 0 && current_proc->PID != 1){
-		current_proc->priority = 1;
+		current_proc->priority = 1;//Set priority to normal if everthing is completed
 	}
 
 }
 
-void NewSemaphore(int SID, int val){
+void NewSemaphore(int SID, int val){ //create new semaphore
 	if(SMP_count == 4){
 		printf(" There are already 5 semaphores, cannot created more.\n");
 		return;
@@ -326,7 +346,7 @@ void NewSemaphore(int SID, int val){
 	printf(" New Semaphore created, SID is: %i\n", SID);
 }
 
-void SemaphoreP(int SID){
+void SemaphoreP(int SID){ //Smaphore P
 	if(current_proc->PID == 1){
 		printf(" Cannot add initial process to Semaphore!\n");
 		return;
@@ -356,7 +376,7 @@ void SemaphoreP(int SID){
 	printf(" Added process %i to semaphore %i.\n", current_proc->PID, current_semaphore->SID);
 }
 
-void SemaphoreV(int SID){
+void SemaphoreV(int SID){ //Semaphore Q
 	if(Semaphore_List[SID] == 0){
 		printf(" Semaphore %i does not exist.\n", SID);
 		return;
@@ -378,7 +398,7 @@ void SemaphoreV(int SID){
 
 
 
-void Proinfo(int PID){
+void Proinfo(int PID){ //Display info of a process
 	printf("\033[0m-------------------------------------------\033[0;32m\n");
 	
 	PCB * Pinfo = SearchAll(PID);
@@ -389,7 +409,7 @@ void Proinfo(int PID){
 	printPCB(Pinfo);
 }
 
-void printmenu(){
+void printmenu(){ //print the menu
 	printf("\033[0m");
 	printf(	"-------------------------------------------\n"
 		"		Main Menu\n"
@@ -423,7 +443,7 @@ int main(){
 	ReadyQ_Norm = ListCreate();
 	ReadyQ_Low = ListCreate();
 
-	create(2,1); //create(low priority, ready)
+	create(2,1); //Initial process, create(low priority, ready)
 
 	ListFirst(ReadyQ_Low);
 	current_proc = ListRemove(ReadyQ_Low);
@@ -453,7 +473,7 @@ int main(){
 				};
 				break;
 			case 'C':
-				create(1,0);//create(priority, status)
+				create(1,0); //create(priority, status)
 				break;
 			case 'F':
 				Fork();
@@ -463,7 +483,7 @@ int main(){
 				printf("Please enter the PID to Kill: ");
 				scanf("%d", &parameter);
 				getchar();
-				Kill(parameter);
+				Kill(parameter); //Kill (SID)
 				break;
 
 			case 'E':
@@ -482,7 +502,7 @@ int main(){
 				fgets(message, 100, stdin);
 				printf("\033[0;32m");					
 
-				Send(parameter, message);
+				Send(parameter, message); //Send(PID, msg)
 				memset(message, 0, 101);				
 				break;
 
@@ -497,7 +517,7 @@ int main(){
 				printf("\033[0mPlease enter the message to reply: ");
 				fgets(message, 100, stdin);
 				printf("\033[0;32m");
-				Reply(parameter, message);
+				Reply(parameter, message); //Reply(PID, msg)
 				memset(message, 0, 101);				
 				break;
 
@@ -518,7 +538,7 @@ int main(){
 				getchar();
 				printf("\033[0;32m");					
 
-				NewSemaphore(parameter, parameter2);
+				NewSemaphore(parameter, parameter2); //NewSemaphore(SID, val)
 				break;
 
 			case 'P':
@@ -526,7 +546,7 @@ int main(){
 				scanf("%d", &parameter);
 				getchar();
 				printf("\033[0;32m");
-				SemaphoreP(parameter);			
+				SemaphoreP(parameter); //SemaphoreP(SID)			
 				break;
 
 			case 'V':
@@ -534,7 +554,7 @@ int main(){
 				scanf("%d", &parameter);
 				getchar();
 				printf("\033[0;32m");
-				SemaphoreV(parameter);	
+				SemaphoreV(parameter); //SemaphoreV(SID)
 				break;
 
 			case 'I':
@@ -542,7 +562,7 @@ int main(){
 				scanf("%d", &parameter);
 				getchar();
 				printf("\033[0;32m");
-				Proinfo(parameter);
+				Proinfo(parameter); //Proinfo(PID)
 				break;
 
 			case 'T':

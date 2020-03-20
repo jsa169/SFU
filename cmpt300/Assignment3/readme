@@ -1,0 +1,16 @@
+README for Operating system Simulation
+
+File list:
+1. function.c
+2. function.c
+3. simulation.c
+4. list.o
+5. list.h
+6. makefile
+7. readme
+
+Instructions to run:
+Open terminal, navigate  to the folder containing the relevant files. Then, type 'make' to create executable 'simulation'. Type './similation' to run  the program. After running, use 'make clean' to clean uneccessary files.
+
+Description of functionalities:
+This simulations lets the user simulate an OS like environment, where the use can create their own processes and semaphores. The process are executed in a Round Robin style, where the user controls the CPU time for each process. The user can also send messages from and to a process. Detailed instructions on the different commands that are callable is in the program itself.
