@@ -9,8 +9,11 @@ typedef struct PCB {
 	int status; //-1 blocked, 0 ready, 1 running
 	
 	int msg; //1 has message, 0 no message
+	int wait; //1 Waiting for message or reply, 0 not waiting
+	int smp; //Blocked by semaphore ID
 	int sender; //PID of sender
-	char message[100];
+	int needtoreply;
+	char message[101];
 }PCB;
 
 int comparator(void *item, void *comparisonArg);
@@ -24,3 +27,6 @@ typedef struct Semaphore {
 	int val;
 	LIST * proc; // List of blocked process
 }SMP;
+
+SMP * new_SMP(int SID, int val);
+

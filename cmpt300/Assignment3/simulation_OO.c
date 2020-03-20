@@ -19,13 +19,13 @@ int parameter2;
 char message[101];
 
 void TotalInfo(){
-	printf("-------------------------------------------\n");
+	printf("----------------------------------------------------------------------");
 
 	PCB * current;
 
-	printf("Total process: %i\n", proc_count);
+	printf("Total process running: %i", proc_count);
 
-	printf("\nCurrent process:\n");
+	printf("\nCurrent running process:\n");
 	printPCB(current_proc);
 	
 	printf("\nHigh priority processes (%i): \n", ListCount(ReadyQ_High));
@@ -86,8 +86,7 @@ PCB * create(int priority, int status){
 	if(priority == 1) ListAppend(ReadyQ_Norm, new_proc);
 	if(priority == 0) ListAppend(ReadyQ_High, new_proc);
 
-	printf("-------------------------------------------\n"
-		" The following proccess is created: \n");
+	if (proc_count != 1) printf("Proccess Created: \n");
 	printPCB(new_proc);
 	return new_proc;
 
@@ -117,6 +116,7 @@ void Quantum(){
 
 			if (current_proc->status == -1 || current_proc->priority == 0) {
 				ListAppend(ReadyQ_High, current_proc);//if blocked -> High
+				TotalInfo();
 			}else{//if not blocked -> Norm
 				ListAppend(ReadyQ_Norm, current_proc);
 			}
@@ -153,7 +153,7 @@ void Quantum(){
 		}
 	}
 	current_proc->status = 1;
-	printf(" Current running process:\n");
+	printf("Current running process:\n");
 	printPCB(current_proc);
 
 }
@@ -202,42 +202,41 @@ void Exit(){
 void Send(int PID, char * msg){
 	PCB * receive_proc = SearchAll(PID);
 	if(receive_proc == NULL){
-		printf(" Receiving PID does not exist.\n");
+		printf("Receiving PID does not exist.\n");
 		return;
 	}
 	if(current_proc->PID == 1){
-		printf(" Cannot send message from initial process.\n");
+		printf("Cannot send message from initial process.\n");
 		return;
 	}
 	if(current_proc->status == -1){
-		printf(" Cannot send, current process is blocked.\n");
+		printf("Cannot send, current process is blocked.\n");
 		return;
 	}
 	if(PID == 1){
-		printf(" Cannot send message to initial process.\n");
+		printf("Cannot send message to initial process.\n");
 		return;
 	}
 	if(receive_proc->msg == 1){
-		printf(" Cannot send, receiver has unreceived message.\n");
+		printf("Cannot send, receiver has unreceived message.\n");
 		return;	
 	}
 	if(receive_proc->status == -1 && receive_proc->smp != 0){
-		printf(" Cannot send, receiver is currently blocked by a semaphore.\n");
+		printf("Cannot send, receiver is currently blocked by a semaphore.\n");
 		return;
 	}
 	if(receive_proc->status == -1 && receive_proc->wait == 1){
-		printf(" Cannot send, reverive is waiting for a message.\n");
+		printf("Cannot send, reverive is waiting for a message.\n");
 		return;
 	}
 	if(current_proc->msg == 1){
-		printf(" Cannot send, the current process has unread message from another process.\n");
+		printf("cannot send, the current process has unread message from another process.\n");
 		return;
 	}
 
 	strcpy(receive_proc->message, msg);
 	receive_proc->msg = 1;
 	receive_proc->sender = current_proc->PID;
-	receive_proc->needtoreply = 1;
 	receive_proc->status = 0;
 	receive_proc->wait = 0;
 	current_proc->status = -1;
@@ -249,33 +248,30 @@ void Send(int PID, char * msg){
 		ListAppend(ReadyQ_High, receive_proc);
 		receive_proc->priority = 0;
 	}
-	if(current_proc->status == -1) {
-		printf(" Message sent, proccess %i will be blocked while waiting for reply.\n", current_proc->PID);
-		Quantum();
-	}
+	if(current_proc->status == -1) Quantum();
 }
 
 void Receive(){
 	if(current_proc->status == -1 && current_proc->wait == 1){
-		printf(" Cannot start receiving, the current process is waiting for reply.\n");
+		printf("Cannot start receiving, the current process is waiting for reply.\n");
 		return;
 	}
 	if(current_proc->msg == 0){
 		current_proc->status = -1;
 		current_proc->wait = 1;
-		printf(" No message to receive, process blocked until message arrives.\n");
+		printf("No message to receive, process blocked until message arrives.\n");
 		Quantum();
 		return;
 	}
 	PCB * sender = SearchAll(current_proc->sender);
-	printf("\n Message from process %i: ", sender->PID);
-
+	printf("Message from process %i:", sender->PID);
 	puts(current_proc->message);
 
+	
 	current_proc->msg = 0;
 
 	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->wait == 0
-		&& current_proc->needtoreply == 0){
+		&& current_proc->sender == 0){
 		current_proc->priority = 1;
 	}
 }
@@ -283,8 +279,10 @@ void Receive(){
 void Reply(int PID, char * msg){
 	PCB * replyto = SearchAll(PID);
 
-	if(PID != current_proc->sender){
-		printf("You can only reply to process %i.\n", current_proc->sender);
+	printPCB(replyto);
+
+	if(current_proc->sender == 0){
+		printf("There is no sender to reply to. \n");
 		return;
 	}
 	replyto->status = 0;
@@ -292,57 +290,51 @@ void Reply(int PID, char * msg){
 	replyto->msg = 1;
 	replyto->sender = current_proc->PID;
 	strcpy(replyto->message, msg);
-	current_proc->needtoreply = 0;
+	current_proc->sender = 0;
+	if(current_proc->status != -1 && current_proc->msg == 0 && current_proc->wait == 0
+		&& current_proc->sender == 0){
+		current_proc->priority = 1;
+	}
 
 }
 
 void NewSemaphore(int SID, int val){
 	if(SMP_count == 4){
-		printf(" There are already 5 semaphores, cannot created more.\n");
+		printf("There are already 5 semaphores, cannot created more.\n");
 		return;
 	}
 	SMP * newSemaphore = new_SMP(SID, val);
 	Semaphore_List[SID] = newSemaphore;
 	SMP_count++;
-	printf(" New Semaphore created, SID is: %i\n", SID);
+	printf("New Semaphore created, SID is: %i\n", SID);
 }
 
 void SemaphoreP(int SID){
 	if(current_proc->PID == 1){
-		printf(" Cannot add initial process to Semaphore!\n");
+		printf("Cannot add initial process to Semaphore!\n");
 		return;
 	}
 	if(current_proc->status == -1){
-		printf(" The current process is already blocked, cannot semaphoreP.\n");
-		return;
-	}
-	if(Semaphore_List[SID] == 0){
-		printf(" The semaphore does not exist.\n");
+		printf("The current process is already blocked, cannot semaphoreP.");
 		return;
 	}
 	SMP * current_semaphore = Semaphore_List[SID];
 	current_semaphore->val--;
 
-	printf(" Semaphore %i has val %i :", SID, current_semaphore->val);
+	printf("current_semaphore->val is %i: \n", current_semaphore->val);
 	if(current_semaphore->val < 0){
 
-		ListAppend(current_semaphore->proc, current_proc);
+		ListAppend(current_semaphore->proc,current_proc);
 		current_proc->status = -1;
 		current_proc->smp = SID;
-		printf(" Process %i is block by Semaphore %i", current_proc->PID, current_semaphore->SID);
-		current_proc->priority = 0;
+		printf("Current process is block by Semaphore SID: %i\n", current_semaphore->SID);
 		Quantum();
 		return;
 	}
-	printf(" Added process %i to semaphore %i.\n", current_proc->PID, current_semaphore->SID);
+	printf("Added process %i to semaphore %i.\n", current_proc->PID, current_semaphore->SID);
 }
 
 void SemaphoreV(int SID){
-	if(Semaphore_List[SID] == 0){
-		printf(" Semaphore %i does not exist.\n", SID);
-		return;
-	}
-
 	SMP * current_semaphore = Semaphore_List[SID];
 	if(current_semaphore->val > 0){
 		printf("There is nothing blocked by semaphore %i\n", current_semaphore->SID);
@@ -382,56 +374,22 @@ int main(){
 	ReadyQ_High = ListCreate();
 	ReadyQ_Norm = ListCreate();
 	ReadyQ_Low = ListCreate();
+	//RecvQ = ListCreate();
 
+	printf("Creating initial process...\n");
 	create(2,1); //create(low priority, ready)
 
 	ListFirst(ReadyQ_Low);
 	current_proc = ListRemove(ReadyQ_Low);
-	printf(	"-------------------------------------------\n"
-		"		Main Menu\n"
-		"-------------------------------------------\n"
-		"	[C] create a new process\n"
-		"	[F] copy current process\n"
-		"	[K] kill a process\n"
-		"	[E] kill this corrent process\n"
-		"	[Q] execute the next ready process\n"
-		"	[S] send a message\n"
-		"	[R] receive a message\n"
-		"	[Y] reply to another process\n"
-		"	[N] create new semaphore\n"
-		"	[P] semaphore P\n"
-		"	[V] semaphore V\n"
-		"	[I] display info of a process\n"
-		"	[T] display all processes\n"
-		"	[Z] clear screen\n");
+	
 	while(1){
-		printf("-------------------------------------------\n");
-		printf("Please select a function (Z to show Menu): ");	
-
+		printf("Please select:");
+		
 		command = getchar();
 		if(command != '\n'){
 			while(getchar() != '\n');			
 		}
 		switch(command){
-			case 'Z':
-				system("clear");
-						printf(	"		Main Menu\n"
-			"-------------------------------------------\n"
-			"	[C] create a new process\n"
-			"	[F] copy current process\n"
-			"	[K] kill a process\n"
-			"	[E] kill this corrent process\n"
-			"	[Q] execute the next ready process\n"
-			"	[S] send a message\n"
-			"	[R] receive a message\n"
-			"	[Y] reply to another process\n"
-			"	[N] create new semaphore\n"
-			"	[P] semaphore P\n"
-			"	[V] semaphore V\n"
-			"	[I] display info of a process\n"
-			"	[T] display all processes\n"
-			"	[Z] clear screen\n");
-				break;
 
 			case 'C':
 				create(1,0);//create(priority, status)
