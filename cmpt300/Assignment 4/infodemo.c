@@ -1,3 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <sys/types.h>
+#include <grp.h>
+#include <pwd.h>
 
 
 void getAndPrintGroup(gid_t grpNum) {
@@ -37,11 +43,12 @@ int main() {
   getAndPrintGroup(103);
   getAndPrintGroup(1000);
   
-  getAndPrintUserName(59894);
+/*  getAndPrintUserName(59894);
   getAndPrintUserName(23524);
   getAndPrintUserName(20746);
   getAndPrintUserName(5970);
   getAndPrintUserName(10485);
+  getAndPrintUserName();*/
 
 	return 0;
 
