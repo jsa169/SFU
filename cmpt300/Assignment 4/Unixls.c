@@ -1,4 +1,7 @@
-//Name: Unixls.c
+//File: Unixls.c
+//Name: Jichuan Shi
+//
+//Description: Simulates ls, with option -i and -l
 
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +22,8 @@
 
 struct passwd *pd;
 struct dirent *dp;
+struct stat filestat;
+
 DIR *dir;
 struct group *grp;
 int max_len;
@@ -64,14 +69,69 @@ void ls_li(char *directory, int i){
 	char path[256] = "\n";
 	char *time = NULL;
 	char link_name[256] = "\n";
-	struct stat filestat;
 	max_len=0;
 	width = 0;
 	dir = opendir(directory);
 
     if(dir == NULL) {
-    	printf("Unixls: cannot access '%s': No such file or directory\n", directory);
-    	return;
+
+    	if(lstat(directory, &filestat) == -1){
+			printf("Unixls: cannot access '%s': No such file or directory\n", directory);
+    		return;
+    	}
+
+    	if(!(filestat.st_mode & S_ISDIR(filestat.st_mode))){
+    		if(i) printf("%li ", filestat.st_ino);
+
+    		if(filestat.st_mode & S_ISDIR(filestat.st_mode)) printf("d");
+			else if(filestat.st_mode & S_ISCHR(filestat.st_mode)) printf("c");
+			else if(filestat.st_mode & S_ISBLK(filestat.st_mode)) printf("b");
+			else if(filestat.st_mode & S_ISFIFO(filestat.st_mode)) printf("p");
+			else if(filestat.st_mode & S_ISSOCK(filestat.st_mode)) printf("s");
+			else if(filestat.st_mode & S_ISLNK(filestat.st_mode)) printf("l");
+			else printf("-");	
+
+			printf( (filestat.st_mode & S_IRUSR) ? "r" : "-");	//http://codewiki.wikidot.com/c:system-calls:stat
+		    printf( (filestat.st_mode & S_IWUSR) ? "w" : "-");
+		    printf( (filestat.st_mode & S_IXUSR) ? "x" : "-");
+		    printf( (filestat.st_mode & S_IRGRP) ? "r" : "-");
+		    printf( (filestat.st_mode & S_IWGRP) ? "w" : "-");
+		    printf( (filestat.st_mode & S_IXGRP) ? "x" : "-");
+		    printf( (filestat.st_mode & S_IROTH) ? "r" : "-");
+		    printf( (filestat.st_mode & S_IWOTH) ? "w" : "-");
+		    printf( (filestat.st_mode & S_IXOTH) ? "x" : "-");
+
+		    printf(" %ld ",filestat.st_nlink);
+
+		 	pd = getpwuid(filestat.st_uid);
+			printf("%s ", pd->pw_name);
+
+			grp = getgrgid(filestat.st_gid);
+			printf("%s ", grp->gr_name);
+
+			printf("%*li ",7, filestat.st_size);   
+
+			time = ctime(&filestat.st_mtime);
+			for(int i = 4; i < 16; i ++){
+				printf("%c", time[i]);
+			}
+
+			printf(" ");
+   			int i;
+    		for( i = strlen(directory) - 2;i >= 0; i--){
+    			if (directory[i] == '/') break;
+    		}
+    		for(i = i + 1; i < strlen(directory); i++){
+    			printf("%c", directory[i]);
+    		}
+
+			readlink(directory, link_name, 256);
+
+			if (filestat.st_mode & S_ISLNK(filestat.st_mode)) printf(" -> %s ", link_name);
+			printf("\n");
+
+    		return;
+    	}   	
     }
 
     while((dp = readdir(dir)) != NULL){
@@ -146,14 +206,32 @@ void ls_li(char *directory, int i){
 
 void ls(char *directory, int wid){
 
+
+
 	max_len=0;
 	width = 0;
 
     dir = opendir(directory);
 
     if(dir == NULL) {
-    	printf("Unixls: cannot access '%s': No such file or directory\n", directory);
-    	return;
+
+    	if(lstat(directory, &filestat) == -1){
+			printf("Unixls: cannot access '%s': No such file or directory\n", directory);
+    		return;
+    	}
+
+    	if(!(filestat.st_mode & S_ISDIR(filestat.st_mode))){
+    		int i;
+    		for( i = strlen(directory) - 2;i >= 0; i--){
+    			if (directory[i] == '/') break;
+    		}
+    		for(i = i + 1; i < strlen(directory); i++){
+    			printf("%c", directory[i]);
+    		}
+    		printf("\t");
+    		return;
+    	}
+    	
     }
 
     while((dp = readdir(dir)) != NULL){
@@ -189,9 +267,26 @@ void ls_i(char *directory, int wid){
     dir = opendir(directory);
 
     if(dir == NULL) {
-    	printf("Unixls: cannot access '%s': No such file or directory\n", directory);
-    	return;
+
+    	if(lstat(directory, &filestat) == -1){
+			printf("Unixls: cannot access '%s': No such file or directory\n", directory);
+    		return;
+    	}
+
+    	if(!(filestat.st_mode & S_ISDIR(filestat.st_mode))){
+    		int i;
+    		for( i = strlen(directory) - 2;i >= 0; i--){
+    			if (directory[i] == '/') break;
+    		}
+    		printf("%ld ", filestat.st_ino);
+    		for(i = i + 1; i < strlen(directory); i++){
+    			printf("%c", directory[i]);
+    		}
+    		printf("\t");
+    		return;
+    	}   	
     }
+
 
     while((dp = readdir(dir)) != NULL){
     	if(!strcmp(dp->d_name, ".")||!strcmp(dp->d_name, "..")||dp->d_name[0] == '.') continue;
@@ -260,7 +355,9 @@ int main(int argc,char **argv) {
 
 	}
 
+
 	if(noncurrentdir_count == 0){
+
 		if(l == 1){
 			if(i == 1) ls_li(cur, 1);
 			else ls_li(cur, 0);
@@ -275,7 +372,11 @@ int main(int argc,char **argv) {
 
 	for(int count = 1; count < argc; count++){
 		if(havedir[count] == 1){
-			printf("\n%s:\n", argv[count]);
+			if(noncurrentdir_count > 1){
+				lstat(argv[count],&filestat);
+				if(!(filestat.st_mode & S_ISDIR(filestat.st_mode)));
+				else printf("\n%s:\n", argv[count]);
+			}
 			if(l == 1){
 				if(i == 1) ls_li(argv[count], 1);
 				else ls_li(argv[count], 0);
@@ -288,4 +389,5 @@ int main(int argc,char **argv) {
 			}
 		}
 	}
+	printf("\n");
 }
