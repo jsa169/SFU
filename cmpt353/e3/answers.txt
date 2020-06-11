@@ -1,0 +1,8 @@
+1. When smoothing the CPU temperature, do you think you got a better result with LOESS or Kalman smoothing? What differences did you notice?
+
+Lowess smooth tends to follow the oeverall trend of the temperature, ignoring some of the spikes of high temperature. Kalman smoothing take in consideration of those high spikes. Since thoese spikes represent real cpu boost temperatures, Kalman smooth is more accurate.
+
+
+2. In the GPX files, you might have also noticed other data about the observations: time stamp, course (heading in degrees from north, 0–360), speed (in m/s). How could those have been used to make a better prediction about the “next” latitude and longitude? [Aside: I tried, and it didn't help much. I think the values are calculated from the latitude/longitude by the app: they don't really add much new information.]
+
+Speed can probably help determine the next location. Since some people may walk faster sometime, for example when crossing a street. A person with faster speed will have a forecasted spot that is further away from current spot. The heading can also help, since by having a heading, we know for sure that a person is going toward a single direction, we can then use this data to remove any records that lies outside of the line between the current location and that direction.

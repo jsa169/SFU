@@ -1,0 +1,9 @@
+Question 1 
+Where you did the same calculations with NumPy and Pandas, which did you find easier to work with? Which code do you think is easier to read?
+
+I did the same calculation when calculating the average precipitation for each month, Average precipitation in each city, and the lowest total precipitation. I find numpy easier to start with, but pandas easier once I know some of the functions. I think the pandas code is easier to read.
+
+question 2
+What were the running times of the two pivot_months_* functions? How can you explain the difference?
+
+The pandas funtion took 31.4ms to run, while the loop took 925 ms, which makes the pandas function 30 times faster. The loop function taks every value inside the data, and calls the functions, and as we know functions can have a very large overhead. As data size increase, the loop method will take longers. The loop method will also likely to use more memory, since for each function call, some memory space is allocated to the function. 
