@@ -1,0 +1,6 @@
+1.Based on your results for the last question, do you think daily temperatures are a good way to predict population density? Briefly explain why or why not.
+
+	It give a hint, where area with extreme high or low temperature has a low population. We can tell that if a place is below 5 degrees or above 30 degrees on average, it has lower population density. When the temperature falls between 5-30, it is hard to predict the population density.
+
+2.The larger data file (stations.json.gz) was kept compressed on disk throughout the analysis. Decompressing every time we run the program seems inefficient. Why might this be faster than working with an uncompressed .json data?
+	If the uncompressed file is larger than the available memory, only a section of it can be on the main memory, any time new data is required, we need to swap it from the fard drive, which is very slow. In contract, the file is compressed, it can fit on the main memory. When we need some data, we can simply decompress the file to get the data. This is most like much faster than getting the file from the hard drive.
