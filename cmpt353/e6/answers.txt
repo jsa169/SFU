@@ -1,0 +1,38 @@
+1. In the A/B test analysis, do you feel like we're p-hacking? How comfortable are you coming to a conclusion at ?
+
+If we use the user data to answer question about the user, and use the instructor data to answer question about the instructor. Then, we did not p-hack. However, if we use the data obtained from considering only the instructors, and use that to answer the original question about all users, then it is p-hack, since we are filtering data to get a desireble p value.
+
+
+2. If we had done T-tests between each pair of sorting implementation results, how many tests would we run? If we looked for  in them, what would the probability be of having any false conclusions, just by chance? That's the effective p-value of the many-T-tests analysis. [We could have done a Bonferroni correction when doing multiple T-tests, which is a fancy way of saying “for  tests, look for significance at ”.]
+
+There are 7 different sorting algorithm, we have to perform t-test between every 2 pair. So 7C2 = 7!/5!2! = 21 different t-tests. The p-value from anova is less than 5%, 0.95^21 is the chance of no incorrect rejection, then the change of incorrect rejection (false concusion) is 1-0.95^21 
+
+
+3. Give a ranking of the sorting implementations by speed, including which ones could not be distinguished. (i.e. which pairs could our experiment not conclude had different running times?)
+
+Using the posthec results:
+    merge partition  -0.0009  0.001  -0.001 -0.0009   True
+    merge       qs1  -0.0009  0.001 -0.0009 -0.0008   True
+    merge       qs2   0.0001  0.001     0.0  0.0001   True
+    merge       qs3   0.0001  0.001     0.0  0.0001   True
+    merge       qs4  -0.0002  0.001 -0.0003 -0.0002   True
+    merge       qs5  -0.0003  0.001 -0.0003 -0.0002   True
+partition       qs1      0.0  0.035     0.0  0.0001   True
+partition       qs2    0.001  0.001   0.001   0.001   True
+partition       qs3    0.001  0.001  0.0009   0.001   True
+partition       qs4   0.0007  0.001  0.0006  0.0007   True
+partition       qs5   0.0006  0.001  0.0006  0.0007   True
+      qs1       qs2    0.001  0.001  0.0009   0.001   True
+      qs1       qs3   0.0009  0.001  0.0009   0.001   True
+      qs1       qs4   0.0006  0.001  0.0006  0.0007   True
+      qs1       qs5   0.0006  0.001  0.0005  0.0006   True
+      qs2       qs3     -0.0    0.9 -0.0001     0.0  False
+      qs2       qs4  -0.0003  0.001 -0.0004 -0.0003   True
+      qs2       qs5  -0.0004  0.001 -0.0004 -0.0003   True
+      qs3       qs4  -0.0003  0.001 -0.0004 -0.0003   True
+      qs3       qs5  -0.0004  0.001 -0.0004 -0.0003   True
+      qs4       qs5     -0.0 0.3044 -0.0001     0.0  False
+
+Fastest to slowest:    partition sort -> qs1 -> qs4/qs5 -> qs2/qs3
+
+We cannot conclude that qs4/qs5 or qs2/qs3 are differnt because the ANOVA test give us False to reject the null hypothesis.
