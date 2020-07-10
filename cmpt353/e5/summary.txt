@@ -1,0 +1,66 @@
+Assuming |r|>=0.3 means there is likely a correlation, |r|<0.3 means there is likely no correlation
+
+Data1:
+mean_x is:  8.71769618641382
+mean_y is:  12.522874034702584
+std_x is:  12.094586936598956
+std_y is:  6.606680770370137
+range_x is: { -22.635877790008944 , 35.23705548785129 }
+range_y is: { -2.5650878326932127 , 27.38415261152477 }
+r is:  0.9503256954375492
+x and y are approximately positively correlated.
+
+
+Data2:
+mean_x is:  -0.7107871267159573
+mean_y is:  -0.7489869764497991
+std_x is:  11.424031427941332
+std_y is:  6.226549791205469
+range_x is: { -33.2711130771198 , 27.6470003722073 }
+range_y is: { -18.621803760419066 , 14.147314992317481 }
+r is:  0.955153166575037
+x and y are approximately positively correlated.
+
+
+Data3:
+mean_x is:  0.9689074904200939
+mean_y is:  8.508535236641327
+std_x is:  2.2318288211623565
+std_y is:  1.1473837107336813
+range_x is: { -2.4490643296742807 , 4.51888491755363 }
+range_y is: { 6.641734490391762 , 10.551871022804317 }
+r is:  0.9819372646760665
+x and y are approximately positively correlated.
+
+
+Data4:
+mean_x is:  49.90508614830509
+mean_y is:  18.553836525423726
+std_x is:  28.38755430203193
+std_y is:  16.475637541936198
+range_x is: { 0.0 , 87.3767 }
+range_y is: { 0.0 , 44.56504 }
+r is:  -0.08119306735490815
+x and y are likely not correlated
+
+
+Data5:
+mean_x is:  49.90999357843095
+mean_y is:  18.555524937729086
+std_x is:  28.378981284825976
+std_y is:  16.470559057583237
+range_x is: { 4.337892453674525 , 91.0528633396976 }
+range_y is: { 0.05549750758115175 , 49.93419703633311 }
+r is:  -0.0882359898305888
+x and y are likely not correlated
+
+
+Data6:
+mean_x is:  7.21615517960992
+mean_y is:  7.602215028237295
+std_x is:  11.861841302343016
+std_y is:  11.70541274804915
+range_x is: { -24.33382075234097 , 35.402138910929 }
+range_y is: { -22.9563569970746 , 36.07987403078143 }
+r is:  0.9350685662094907
+x and y are approximately positively correlated.

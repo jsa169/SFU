@@ -1,0 +1,7 @@
+ 1. Looking at your dog-rates.ipynb, do you think the residual are close-enough to being normal to look at the OLS p-value? Can you reasonably conclude that the ratings are increasing?
+
+ The residuals are close enough to be normal, since according to the central limit theorem, if we have over 40 data points and that the graph look normal enough, it is probably ok. Sicne the p-value is very small, we reject the NULL hypothesis, that the slope is 0. Therefore, we are 95% confident that the ratings are increasing.
+
+ 2. Do you think that the new “better” prediction is letting the Kalman filter do a better job capturing the true signal in the noise? 
+
+ Yes, the residual plot is almost perfectly normal comparing to the previous version.a At the same time, the graph from kalman-filter looks resonablely well.
