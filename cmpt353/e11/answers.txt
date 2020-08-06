@@ -1,0 +1,13 @@
+Without broadcast   0m49.493s
+With    broadcast   0m37.785s
+
+1. In your reddit_relative.py, what intermediate results did you .cache()? Briefly describe what would have happened if you hadn't used .cache() anywhere. (No need to time it, unless you really want to.)
+
+I cached all the results that will be used to join with another df later. Basically, if I need a dataframe again sometime later, then I cached it. If no cache is used, the system will recaculate a dataframe when I need it again. This will lead to longer run time.
+
+2. How did marking DataFrames for broadcast affect the running time of the “best author” program above?
+
+Without broadcast   0m49.493s	
+With    broadcast   0m37.785s	
+
+With broadcase is about 12 second faster than without broadcast
